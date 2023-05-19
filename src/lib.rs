@@ -1,5 +1,5 @@
 use std::{future::Future, pin::Pin, sync::Arc};
-use std::sync::Mutex;
+use parking_lot::Mutex;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum AsyncRunnerState<T> 
@@ -21,18 +21,18 @@ impl<T: Send> AsyncRunner<T> {
         Self { inner: Arc::new(Mutex::new(runner::AsyncRunner::new(future))) }
     }
     pub fn cancel(&self) {
-        self.inner.lock().unwrap().cancel();
+        self.inner.lock().cancel();
     }
 }
 impl<T: Clone> AsyncRunner<T> {
     pub fn state(&self) -> AsyncRunnerState<T> {
-        self.inner.lock().unwrap().state()
+        self.inner.lock().state()
     }
 }
 impl<T: Clone + Unpin + Send> Future for AsyncRunner<T> {
     type Output = AsyncRunnerState<T>;
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
-        Pin::new(&mut *self.inner.lock().unwrap()).poll(cx)
+        Pin::new(&mut *self.inner.lock()).poll(cx)
     }
 }
 
